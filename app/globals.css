@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+:root {
+  /* Claude (Gold) */
+  --claude-primary: #FFD700;
+  --claude-secondary: #FFA500;
+  --claude-accent: #FF8C00;
+
+  /* GPT (Cyan) */
+  --gpt-primary: #00FFFF;
+  --gpt-secondary: #00CED1;
+  --gpt-accent: #008B8B;
+
+  /* Gemini (Purple) */
+  --gemini-primary: #9400D3;
+  --gemini-secondary: #8A2BE2;
+  --gemini-accent: #4B0082;
+
+  /* Background */
+  --bg-dark: #0a0a0f;
+  --bg-mid: #1a1a2e;
+  --bg-light: #16213e;
+
+  /* Neon Accents */
+  --neon-pink: #ff00ff;
+  --neon-green: #00ff00;
+  --neon-red: #ff0080;
+}
+
+@theme inline {
+  --color-claude-primary: var(--claude-primary);
+  --color-claude-secondary: var(--claude-secondary);
+  --color-claude-accent: var(--claude-accent);
+  --color-gpt-primary: var(--gpt-primary);
+  --color-gpt-secondary: var(--gpt-secondary);
+  --color-gpt-accent: var(--gpt-accent);
+  --color-gemini-primary: var(--gemini-primary);
+  --color-gemini-secondary: var(--gemini-secondary);
+  --color-gemini-accent: var(--gemini-accent);
+  --color-cyber-dark: var(--bg-dark);
+  --color-cyber-mid: var(--bg-mid);
+  --color-cyber-light: var(--bg-light);
+  --color-neon-pink: var(--neon-pink);
+  --color-neon-green: var(--neon-green);
+  --color-neon-red: var(--neon-red);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--bg-dark);
+  color: #ededed;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Glitch Effect */
+@keyframes glitch {
+  0% {
+    text-shadow: 0.05em 0 0 var(--neon-pink), -0.05em -0.025em 0 var(--gpt-primary),
+      0.025em 0.05em 0 var(--gemini-primary);
+  }
+  14% {
+    text-shadow: 0.05em 0 0 var(--neon-pink), -0.05em -0.025em 0 var(--gpt-primary),
+      0.025em 0.05em 0 var(--gemini-primary);
+  }
+  15% {
+    text-shadow: -0.05em -0.025em 0 var(--neon-pink), 0.025em 0.025em 0 var(--gpt-primary),
+      -0.05em -0.05em 0 var(--gemini-primary);
+  }
+  49% {
+    text-shadow: -0.05em -0.025em 0 var(--neon-pink), 0.025em 0.025em 0 var(--gpt-primary),
+      -0.05em -0.05em 0 var(--gemini-primary);
+  }
+  50% {
+    text-shadow: 0.025em 0.05em 0 var(--neon-pink), 0.05em 0 0 var(--gpt-primary),
+      0 -0.05em 0 var(--gemini-primary);
+  }
+  99% {
+    text-shadow: 0.025em 0.05em 0 var(--neon-pink), 0.05em 0 0 var(--gpt-primary),
+      0 -0.05em 0 var(--gemini-primary);
+  }
+  100% {
+    text-shadow: -0.025em 0 0 var(--neon-pink), -0.025em -0.025em 0 var(--gpt-primary),
+      -0.025em -0.05em 0 var(--gemini-primary);
+  }
+}
+
+.glitch {
+  animation: glitch 500ms infinite;
+}
+
+/* Neon Pulse */
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor);
+  }
+  50% {
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor);
+  }
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+/* Float Animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Scanline Effect */
+.scanlines::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Cyber Grid Background */
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Button Hover Effect */
+.cyber-btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.cyber-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.cyber-btn:hover::before {
+  left: 100%;
+}
+
+/* Card Glow Effect */
+.card-glow {
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5), 0 0 60px rgba(0, 255, 255, 0.3);
+}
+
+/* Text Shadow Neon */
+.text-neon-gold {
+  text-shadow: 0 0 10px var(--claude-primary), 0 0 20px var(--claude-primary), 0 0 40px var(--claude-secondary);
+}
+
+.text-neon-cyan {
+  text-shadow: 0 0 10px var(--gpt-primary), 0 0 20px var(--gpt-primary), 0 0 40px var(--gpt-secondary);
+}
+
+.text-neon-purple {
+  text-shadow: 0 0 10px var(--gemini-primary), 0 0 20px var(--gemini-primary), 0 0 40px var(--gemini-secondary);
+}
