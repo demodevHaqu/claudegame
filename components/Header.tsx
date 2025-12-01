@@ -1,0 +1,58 @@
+"use client";
+
+import Link from "next/link";
+import {
+  SignInButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from "@clerk/nextjs";
+
+export default function Header() {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 bg-cyber-dark/80 backdrop-blur-md border-b border-white/10">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl font-bold text-neon-gold">AI ARENA</span>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="hidden sm:flex items-center gap-6">
+          <Link
+            href="/play"
+            className="text-gray-300 hover:text-white transition-colors"
+          >
+            Play
+          </Link>
+          <Link
+            href="/leaderboard"
+            className="text-gray-300 hover:text-white transition-colors"
+          >
+            Leaderboard
+          </Link>
+        </nav>
+
+        {/* Auth */}
+        <div className="flex items-center gap-4">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="px-4 py-2 text-sm font-medium text-black bg-neon-gold rounded-lg hover:bg-yellow-400 transition-colors">
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "w-9 h-9",
+                },
+              }}
+            />
+          </SignedIn>
+        </div>
+      </div>
+    </header>
+  );
+}

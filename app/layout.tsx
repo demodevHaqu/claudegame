@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import Header from "@/components/Header";
 import "./globals.css";
 
 // Clerk 키 존재 여부 확인
@@ -39,10 +40,14 @@ export default function RootLayout({
       >
         {clerkPublishableKey ? (
           <ClerkProvider publishableKey={clerkPublishableKey}>
-            {children}
+            <Header />
+            <div className="pt-16">{children}</div>
           </ClerkProvider>
         ) : (
-          children
+          <>
+            <Header />
+            <div className="pt-16">{children}</div>
+          </>
         )}
       </body>
     </html>
