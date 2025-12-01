@@ -6,110 +6,44 @@ import Card from "@/components/ui/Card";
 import { formatTime, formatScore } from "@/lib/utils";
 import type { GameRecord } from "@/lib/supabase/types";
 
-// 데모 데이터 (Supabase 연결 전)
-const DEMO_DATA: GameRecord[] = [
-  {
-    id: "1",
-    player_name: "SpeedRunner",
-    total_score: 45230,
-    total_time: 272000,
-    deaths: 0,
-    created_at: new Date().toISOString(),
-    stage1_time: 40000,
-    stage2_time: 50000,
-    stage3_time: 55000,
-    stage4_time: 60000,
-    stage5_time: 67000,
-    no_death_bonus: true,
-    speed_run_bonus: true,
-  },
-  {
-    id: "2",
-    player_name: "BossSlayer",
-    total_score: 42100,
-    total_time: 301000,
-    deaths: 1,
-    created_at: new Date().toISOString(),
-    stage1_time: 45000,
-    stage2_time: 55000,
-    stage3_time: 60000,
-    stage4_time: 70000,
-    stage5_time: 71000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-  {
-    id: "3",
-    player_name: "NoDeathKing",
-    total_score: 38500,
-    total_time: 345000,
-    deaths: 0,
-    created_at: new Date().toISOString(),
-    stage1_time: 50000,
-    stage2_time: 60000,
-    stage3_time: 70000,
-    stage4_time: 80000,
-    stage5_time: 85000,
-    no_death_bonus: true,
-    speed_run_bonus: false,
-  },
-  {
-    id: "4",
-    player_name: "ProGamer",
-    total_score: 35200,
-    total_time: 372000,
-    deaths: 2,
-    created_at: new Date().toISOString(),
-    stage1_time: 55000,
-    stage2_time: 65000,
-    stage3_time: 75000,
-    stage4_time: 85000,
-    stage5_time: 92000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-  {
-    id: "5",
-    player_name: "AIHunter",
-    total_score: 32800,
-    total_time: 390000,
-    deaths: 3,
-    created_at: new Date().toISOString(),
-    stage1_time: 60000,
-    stage2_time: 70000,
-    stage3_time: 80000,
-    stage4_time: 90000,
-    stage5_time: 90000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-];
-
 const RANK_ICONS = ["🥇", "🥈", "🥉"];
 
 export default function LiveLeaderboard() {
-  const [records, setRecords] = useState<GameRecord[]>(DEMO_DATA);
+  const [records, setRecords] = useState<GameRecord[]>([]);
   const [isLive, setIsLive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Supabase가 설정되면 실시간 데이터로 교체
     const fetchRecords = async () => {
       try {
         const response = await fetch("/api/scores?limit=5");
         if (response.ok) {
           const data = await response.json();
-          if (data.length > 0) {
-            setRecords(data);
-            setIsLive(true);
-          }
+          setRecords(data);
+          setIsLive(data.length > 0);
         }
-      } catch {
-        // 데모 데이터 유지
+      } catch (error) {
+        console.error("Failed to fetch leaderboard:", error);
+        setIsLive(false);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchRecords();
   }, []);
+
+  if (isLoading) {
+    return (
+      <section className="py-20 px-4 bg-cyber-mid/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center">
+            <div className="text-gray-400">로딩 중...</div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 px-4 bg-cyber-mid/30">
@@ -185,10 +119,16 @@ export default function LiveLeaderboard() {
               ))}
             </tbody>
           </table>
+
+          {records.length === 0 && (
+            <div className="py-12 text-center text-gray-500">
+              아직 기록이 없습니다.
+            </div>
+          )}
         </Card>
 
         <p className="text-center text-gray-500 text-sm mt-4">
-          {isLive ? "실시간 업데이트" : "데모 데이터"}
+          {isLive ? "실시간 업데이트" : "데이터를 불러올 수 없습니다"}
         </p>
       </div>
     </section>

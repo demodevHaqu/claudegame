@@ -129,30 +129,28 @@ export class VictoryScene extends Phaser.Scene {
 
   private async submitScore(name: string, score: number, time: number) {
     try {
-      const response = await fetch("/api/scores", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          playerName: name,
-          totalScore: score,
-          totalTime: time,
-          deaths: this.gameState.deaths,
-          stage1Time: this.gameState.stageTimes[0] || null,
-          stage2Time: this.gameState.stageTimes[1] || null,
-          stage3Time: this.gameState.stageTimes[2] || null,
-          stage4Time: this.gameState.stageTimes[3] || null,
-          stage5Time: this.gameState.stageTimes[4] || null,
-          noDeathBonus: this.gameState.deaths === 0,
-          speedRunBonus: time < 300000,
-        }),
-      });
+      // 게임 결과를 localStorage에 저장 (React 컴포넌트에서 Clerk 정보와 함께 제출)
+      const gameResult = {
+        playerName: name,
+        totalScore: score,
+        totalTime: time,
+        deaths: this.gameState.deaths,
+        stage1Time: this.gameState.stageTimes[0] || null,
+        stage2Time: this.gameState.stageTimes[1] || null,
+        stage3Time: this.gameState.stageTimes[2] || null,
+        stage4Time: this.gameState.stageTimes[3] || null,
+        stage5Time: this.gameState.stageTimes[4] || null,
+        noDeathBonus: this.gameState.deaths === 0,
+        speedRunBonus: time < 300000,
+        timestamp: Date.now(),
+      };
 
-      if (response.ok) {
-        // 리더보드로 이동
-        window.location.href = "/leaderboard";
-      }
+      localStorage.setItem("gameResult", JSON.stringify(gameResult));
+
+      // 리더보드로 이동 (React 컴포넌트에서 자동 제출)
+      window.location.href = "/leaderboard";
     } catch (error) {
-      console.error("Failed to submit score:", error);
+      console.error("Failed to save game result:", error);
     }
   }
 }

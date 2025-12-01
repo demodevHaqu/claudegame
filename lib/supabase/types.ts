@@ -1,10 +1,12 @@
 export interface GameRecord {
   id: string;
+  user_id?: string; // Clerk user ID
   player_name: string;
   total_time: number;
   total_score: number;
   deaths: number;
   created_at: string;
+  updated_at?: string;
   stage1_time: number | null;
   stage2_time: number | null;
   stage3_time: number | null;
@@ -19,6 +21,7 @@ export interface LeaderboardEntry extends GameRecord {
 }
 
 export type ScoreSubmission = {
+  userId?: string; // Clerk user ID
   playerName: string;
   totalScore: number;
   totalTime: number;

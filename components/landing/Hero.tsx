@@ -86,11 +86,10 @@ export default function Hero() {
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className="absolute w-1 h-1 rounded-full bg-cyan-400 opacity-30"
+          className="absolute w-1 h-1 rounded-full bg-cyan-400 opacity-30 animate-pulse"
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
-            animation: `float ${5 + particle.delay}s ease-in-out infinite`,
             animationDelay: `${particle.delay}s`,
           }}
         />
@@ -234,10 +233,30 @@ export default function Hero() {
             showCTA ? "opacity-100" : "opacity-0"
           }`}
         >
-          <StatItem value="5" label="BOSSES" />
-          <StatItem value="4" label="DIFFICULTIES" />
-          <StatItem value="20+" label="ACHIEVEMENTS" />
-          <StatItem value="5" label="MIN CONTENT" />
+          <div className="text-center">
+            <p className="text-3xl sm:text-4xl font-bold text-yellow-400 font-mono">
+              5
+            </p>
+            <p className="text-xs text-gray-500 font-mono tracking-wider">BOSSES</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl sm:text-4xl font-bold text-yellow-400 font-mono">
+              4
+            </p>
+            <p className="text-xs text-gray-500 font-mono tracking-wider">DIFFICULTIES</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl sm:text-4xl font-bold text-yellow-400 font-mono">
+              20+
+            </p>
+            <p className="text-xs text-gray-500 font-mono tracking-wider">ACHIEVEMENTS</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl sm:text-4xl font-bold text-yellow-400 font-mono">
+              5
+            </p>
+            <p className="text-xs text-gray-500 font-mono tracking-wider">MIN CONTENT</p>
+          </div>
         </div>
       </div>
 
@@ -255,31 +274,8 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* CSS 애니메이션 */}
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-100px) translateX(20px);
-            opacity: 0;
-          }
-        }
-      `}</style>
+      {/* CSS 애니메이션은 globals.css로 이동 */}
     </section>
   );
 }
 
-function StatItem({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="text-center">
-      <p className="text-3xl sm:text-4xl font-bold text-yellow-400 font-mono">
-        {value}
-      </p>
-      <p className="text-xs text-gray-500 font-mono tracking-wider">{label}</p>
-    </div>
-  );
-}
