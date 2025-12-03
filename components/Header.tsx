@@ -37,8 +37,8 @@ export default function Header() {
         <div className="flex items-center gap-4">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="px-4 py-2 text-sm font-medium text-black bg-neon-gold rounded-lg hover:bg-yellow-400 transition-colors">
-                Sign In
+              <button className="px-4 py-2 text-sm font-bold text-neon-gold border border-neon-gold/60 rounded-lg bg-neon-gold/10 hover:bg-neon-gold hover:text-cyber-dark shadow-[0_0_10px_rgba(255,215,0,0.3)] hover:shadow-[0_0_20px_rgba(255,215,0,0.6)] transition-all duration-300">
+                로그인
               </button>
             </SignInButton>
           </SignedOut>

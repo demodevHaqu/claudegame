@@ -1,117 +1,87 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { formatTime, formatScore } from "@/lib/utils";
 import type { GameRecord } from "@/lib/supabase/types";
 
-// 데모 데이터
-const DEMO_DATA: GameRecord[] = [
-  {
-    id: "1",
-    player_name: "SpeedRunner",
-    total_score: 45230,
-    total_time: 272000,
-    deaths: 0,
-    created_at: new Date().toISOString(),
-    stage1_time: 40000,
-    stage2_time: 50000,
-    stage3_time: 55000,
-    stage4_time: 60000,
-    stage5_time: 67000,
-    no_death_bonus: true,
-    speed_run_bonus: true,
-  },
-  {
-    id: "2",
-    player_name: "BossSlayer",
-    total_score: 42100,
-    total_time: 301000,
-    deaths: 1,
-    created_at: new Date().toISOString(),
-    stage1_time: 45000,
-    stage2_time: 55000,
-    stage3_time: 60000,
-    stage4_time: 70000,
-    stage5_time: 71000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-  {
-    id: "3",
-    player_name: "NoDeathKing",
-    total_score: 38500,
-    total_time: 345000,
-    deaths: 0,
-    created_at: new Date().toISOString(),
-    stage1_time: 50000,
-    stage2_time: 60000,
-    stage3_time: 70000,
-    stage4_time: 80000,
-    stage5_time: 85000,
-    no_death_bonus: true,
-    speed_run_bonus: false,
-  },
-  {
-    id: "4",
-    player_name: "ProGamer",
-    total_score: 35200,
-    total_time: 372000,
-    deaths: 2,
-    created_at: new Date().toISOString(),
-    stage1_time: 55000,
-    stage2_time: 65000,
-    stage3_time: 75000,
-    stage4_time: 85000,
-    stage5_time: 92000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-  {
-    id: "5",
-    player_name: "AIHunter",
-    total_score: 32800,
-    total_time: 390000,
-    deaths: 3,
-    created_at: new Date().toISOString(),
-    stage1_time: 60000,
-    stage2_time: 70000,
-    stage3_time: 80000,
-    stage4_time: 90000,
-    stage5_time: 90000,
-    no_death_bonus: false,
-    speed_run_bonus: false,
-  },
-];
-
 const RANK_ICONS = ["🥇", "🥈", "🥉"];
 
 type Period = "all" | "daily" | "weekly";
 
 export default function LeaderboardPage() {
-  const [records, setRecords] = useState<GameRecord[]>(DEMO_DATA);
+  const [records, setRecords] = useState<GameRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState<Period>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const hasSubmittedRef = useRef(false);
 
+  // 게임 결과 제출 (localStorage에서)
+  useEffect(() => {
+    const submitGameResult = async () => {
+      if (hasSubmittedRef.current) return;
+
+      const gameResultStr = localStorage.getItem("gameResult");
+      if (!gameResultStr) return;
+
+      try {
+        const gameResult = JSON.parse(gameResultStr);
+
+        // 5분 이내의 결과만 제출 (오래된 데이터 방지)
+        if (Date.now() - gameResult.timestamp > 5 * 60 * 1000) {
+          localStorage.removeItem("gameResult");
+          return;
+        }
+
+        hasSubmittedRef.current = true;
+        setSubmitting(true);
+
+        const response = await fetch("/api/scores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(gameResult),
+        });
+
+        if (response.ok) {
+          console.log("Score submitted successfully");
+          localStorage.removeItem("gameResult");
+        } else {
+          console.error("Failed to submit score:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error submitting score:", error);
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    submitGameResult();
+  }, []);
+
+  // 리더보드 데이터 fetch
   useEffect(() => {
     const fetchRecords = async () => {
       try {
         const response = await fetch(`/api/scores?limit=100&period=${period}`);
         if (response.ok) {
           const data = await response.json();
-          if (data.length > 0) {
-            setRecords(data);
-          }
+          setRecords(data);
         }
-      } catch {
-        // 데모 데이터 유지
+      } catch (error) {
+        console.error("Failed to fetch leaderboard:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchRecords();
-  }, [period]);
+    // 제출 완료 후 또는 즉시 fetch
+    const delay = submitting ? 1000 : 0;
+    const timer = setTimeout(fetchRecords, delay);
+    return () => clearTimeout(timer);
+  }, [period, submitting]);
 
   const filteredRecords = records.filter((record) =>
     record.player_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -164,6 +134,13 @@ export default function LeaderboardPage() {
             className="px-4 py-2 bg-cyber-mid border border-white/10 rounded text-white placeholder-gray-500 focus:outline-none focus:border-gpt-primary"
           />
         </div>
+
+        {/* Submission Status */}
+        {submitting && (
+          <div className="mb-4 p-4 bg-claude-primary/20 border border-claude-primary/50 rounded text-claude-primary text-center">
+            점수 제출 중...
+          </div>
+        )}
 
         {/* Table */}
         <Card className="overflow-hidden">
@@ -250,11 +227,15 @@ export default function LeaderboardPage() {
             </table>
           </div>
 
-          {filteredRecords.length === 0 && (
+          {isLoading ? (
             <div className="py-12 text-center text-gray-400">
-              No records found
+              로딩 중...
             </div>
-          )}
+          ) : filteredRecords.length === 0 ? (
+            <div className="py-12 text-center text-gray-400">
+              {searchTerm ? "검색 결과가 없습니다" : "아직 기록이 없습니다. 첫 번째 기록을 남겨보세요!"}
+            </div>
+          ) : null}
         </Card>
       </div>
     </main>

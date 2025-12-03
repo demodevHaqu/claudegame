@@ -157,6 +157,9 @@ export class MenuScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const startY = height / 2 - 40;
 
+    // 이전 버튼들 초기화
+    this.difficultyButtons = [];
+
     // 제목
     this.add.text(width / 2, startY - 50, "SELECT DIFFICULTY", {
       fontFamily: "monospace",
@@ -222,8 +225,10 @@ export class MenuScene extends Phaser.Scene {
 
   private updateDifficultySelection() {
     this.difficultyButtons.forEach((btn, i) => {
-      const bg = btn.first as Phaser.GameObjects.Rectangle;
+      const bg = btn.getAt(0) as Phaser.GameObjects.Rectangle | undefined;
       const diff = DIFFICULTIES[i];
+
+      if (!bg) return;
 
       if (i === this.selectedDifficulty) {
         bg.setFillStyle(diff.color, 0.3);

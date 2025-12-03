@@ -101,7 +101,8 @@ export class GameOverScene extends Phaser.Scene {
   private goToMenu() {
     this.cameras.main.fadeOut(500, 0, 0, 0);
     this.time.delayedCall(500, () => {
-      this.scene.start("MenuScene");
+      // Next.js 홈페이지로 이동
+      window.location.href = "/";
     });
   }
 }

@@ -108,6 +108,9 @@ export class VictoryScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
       if (event.key === "Enter" && playerName.length > 0) {
         this.submitScore(playerName, finalScore, totalTime);
+      } else if (event.key === "Escape") {
+        // ESC 키로 홈페이지 이동
+        window.location.href = "/";
       } else if (event.key === "Backspace") {
         playerName = playerName.slice(0, -1);
         nameDisplay.setText(playerName + "_");
@@ -120,7 +123,7 @@ export class VictoryScene extends Phaser.Scene {
     });
 
     // 안내 텍스트
-    this.add.text(width / 2, height - 80, "Press ENTER to submit score", {
+    this.add.text(width / 2, height - 80, "Press ENTER to submit  |  Press ESC for Main Menu", {
       fontFamily: "monospace",
       fontSize: "14px",
       color: "#666666",

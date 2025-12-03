@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createAnonymousClient, createClient } from "@/lib/supabase/server";
 import { auth } from "@clerk/nextjs/server";
 
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
-    const supabase = await createClient();
+    console.log("[POST /api/scores] userId:", userId);
+
+    // 로그인 사용자도 일단 anonymous client로 처리 (RLS 디버깅용)
+    // JWT 토큰 문제가 있을 수 있으므로 user_id를 null로 설정
+    const supabase = await createAnonymousClient();
     const body = await request.json();
+    console.log("[POST /api/scores] body:", body);
 
     // Validation
     if (!body.playerName || typeof body.totalScore !== "number") {
@@ -17,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const record = {
-      user_id: userId || null, // Clerk 사용자 ID (익명 사용자도 허용)
+      user_id: null, // 임시: anonymous client 사용시 user_id는 null로 설정
       player_name: body.playerName.slice(0, 20), // 최대 20자
       total_score: body.totalScore,
       total_time: body.totalTime || 0,
@@ -48,8 +53,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error saving score:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: "Failed to save score" },
+      { error: "Failed to save score", details: errorMessage },
       { status: 500 }
     );
   }
@@ -57,7 +63,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAnonymousClient();
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "10");
     const period = searchParams.get("period") || "all";
