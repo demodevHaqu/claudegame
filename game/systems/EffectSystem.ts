@@ -3,6 +3,7 @@ import * as Phaser from "phaser";
 export class EffectSystem {
   private scene: Phaser.Scene;
   private particles: Phaser.GameObjects.Particles.ParticleEmitter[] = [];
+  private activeTrails: Map<string, Phaser.Time.TimerEvent> = new Map();
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -47,6 +48,355 @@ export class EffectSystem {
       graphics.generateTexture("particle_spark", 16, 8);
       graphics.destroy();
     }
+
+    // 글로우 파티클 (소프트 원)
+    if (!this.scene.textures.exists("particle_glow")) {
+      const graphics = this.scene.make.graphics({ x: 0, y: 0 });
+      // 그라데이션 효과를 위한 여러 레이어
+      for (let i = 16; i > 0; i -= 2) {
+        const alpha = 0.1 + (16 - i) * 0.05;
+        graphics.fillStyle(0xffffff, alpha);
+        graphics.fillCircle(16, 16, i);
+      }
+      graphics.generateTexture("particle_glow", 32, 32);
+      graphics.destroy();
+    }
+
+    // 레이저 파티클
+    if (!this.scene.textures.exists("particle_laser")) {
+      const graphics = this.scene.make.graphics({ x: 0, y: 0 });
+      graphics.fillStyle(0xffffff, 1);
+      graphics.fillEllipse(16, 4, 32, 8);
+      graphics.generateTexture("particle_laser", 32, 8);
+      graphics.destroy();
+    }
+
+    // 링 파티클
+    if (!this.scene.textures.exists("particle_ring")) {
+      const graphics = this.scene.make.graphics({ x: 0, y: 0 });
+      graphics.lineStyle(3, 0xffffff, 1);
+      graphics.strokeCircle(16, 16, 13);
+      graphics.generateTexture("particle_ring", 32, 32);
+      graphics.destroy();
+    }
+  }
+
+  // ========================================
+  // 슬래시 공격 이펙트 (새로 추가)
+  // ========================================
+  slashEffect(x: number, y: number, direction: number = 0, color: number = 0xffd700) {
+    // 슬래시 아크
+    const slash = this.scene.add.graphics();
+    slash.setPosition(x, y);
+    slash.lineStyle(6, color, 1);
+    slash.beginPath();
+    slash.arc(0, 0, 60, direction - 0.9, direction + 0.9, false);
+    slash.strokePath();
+
+    // 내부 글로우
+    slash.lineStyle(12, color, 0.3);
+    slash.beginPath();
+    slash.arc(0, 0, 60, direction - 0.9, direction + 0.9, false);
+    slash.strokePath();
+
+    slash.setBlendMode(Phaser.BlendModes.ADD);
+    slash.setDepth(100);
+
+    // 애니메이션
+    this.scene.tweens.add({
+      targets: slash,
+      alpha: 0,
+      scaleX: 1.5,
+      scaleY: 1.5,
+      duration: 150,
+      ease: "Power2",
+      onComplete: () => slash.destroy(),
+    });
+
+    // 끝부분 스파크
+    const endX = x + Math.cos(direction) * 60;
+    const endY = y + Math.sin(direction) * 60;
+    this.sparkBurst(endX, endY, color, 6);
+  }
+
+  // ========================================
+  // 스파크 버스트 (새로 추가)
+  // ========================================
+  sparkBurst(x: number, y: number, color: number, count: number = 10) {
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+      const speed = 80 + Math.random() * 120;
+      const size = 2 + Math.random() * 4;
+
+      const spark = this.scene.add.circle(x, y, size, color);
+      spark.setBlendMode(Phaser.BlendModes.ADD);
+      spark.setDepth(100);
+
+      this.scene.tweens.add({
+        targets: spark,
+        x: x + Math.cos(angle) * speed,
+        y: y + Math.sin(angle) * speed,
+        alpha: 0,
+        scale: 0,
+        duration: 250 + Math.random() * 150,
+        ease: "Power2",
+        onComplete: () => spark.destroy(),
+      });
+    }
+  }
+
+  // ========================================
+  // 레이저 라인 이펙트 (새로 추가)
+  // ========================================
+  laserLine(startX: number, startY: number, endX: number, endY: number, color: number = 0xff0080) {
+    const angle = Math.atan2(endY - startY, endX - startX);
+    const distance = Phaser.Math.Distance.Between(startX, startY, endX, endY);
+
+    const laser = this.scene.add.graphics();
+    laser.setPosition(startX, startY);
+    laser.setRotation(angle);
+
+    // 글로우 레이어 (외부 → 내부)
+    laser.fillStyle(color, 0.2);
+    laser.fillRect(0, -20, distance, 40);
+    laser.fillStyle(color, 0.5);
+    laser.fillRect(0, -10, distance, 20);
+    laser.fillStyle(0xffffff, 0.9);
+    laser.fillRect(0, -4, distance, 8);
+
+    laser.setBlendMode(Phaser.BlendModes.ADD);
+    laser.setDepth(100);
+
+    this.scene.tweens.add({
+      targets: laser,
+      alpha: 0,
+      duration: 150,
+      onComplete: () => laser.destroy(),
+    });
+
+    // 시작/끝 임팩트
+    this.sparkBurst(endX, endY, color, 8);
+  }
+
+  // ========================================
+  // 차지 이펙트 (새로 추가)
+  // ========================================
+  chargeEffect(x: number, y: number, color: number, duration: number = 1000): { stop: () => void } {
+    const particles: Phaser.GameObjects.Arc[] = [];
+    const ringGraphics = this.scene.add.graphics();
+    ringGraphics.setDepth(50);
+
+    let elapsed = 0;
+    const timer = this.scene.time.addEvent({
+      delay: 50,
+      loop: true,
+      callback: () => {
+        elapsed += 50;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // 수렴하는 파티클
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 100 - progress * 80;
+        const particle = this.scene.add.circle(
+          x + Math.cos(angle) * dist,
+          y + Math.sin(angle) * dist,
+          3,
+          color,
+          0.8
+        );
+        particle.setBlendMode(Phaser.BlendModes.ADD);
+        particle.setDepth(51);
+        particles.push(particle);
+
+        this.scene.tweens.add({
+          targets: particle,
+          x: x,
+          y: y,
+          alpha: 0,
+          scale: 0.5,
+          duration: 300,
+          onComplete: () => {
+            const idx = particles.indexOf(particle);
+            if (idx > -1) particles.splice(idx, 1);
+            particle.destroy();
+          },
+        });
+
+        // 차지 링
+        ringGraphics.clear();
+        ringGraphics.lineStyle(3 + progress * 3, color, 0.5 + progress * 0.5);
+        ringGraphics.strokeCircle(x, y, 20 + progress * 15);
+      },
+    });
+
+    return {
+      stop: () => {
+        timer.destroy();
+        ringGraphics.destroy();
+        particles.forEach(p => p.destroy());
+      },
+    };
+  }
+
+  // ========================================
+  // 텔레포트 이펙트 (새로 추가)
+  // ========================================
+  teleportEffect(fromX: number, fromY: number, toX: number, toY: number, color: number) {
+    // 출발점 소멸
+    for (let i = 0; i < 3; i++) {
+      const ring = this.scene.add.graphics();
+      ring.setPosition(fromX, fromY);
+      ring.lineStyle(3 - i, color, 1);
+      ring.strokeCircle(0, 0, 20);
+      ring.setBlendMode(Phaser.BlendModes.ADD);
+      ring.setDepth(100);
+
+      this.scene.tweens.add({
+        targets: ring,
+        scaleX: 0,
+        scaleY: 3,
+        alpha: 0,
+        duration: 200 + i * 50,
+        delay: i * 30,
+        onComplete: () => ring.destroy(),
+      });
+    }
+
+    // 도착점 출현
+    this.scene.time.delayedCall(100, () => {
+      for (let i = 0; i < 3; i++) {
+        const ring = this.scene.add.graphics();
+        ring.setPosition(toX, toY);
+        ring.lineStyle(3 - i, color, 1);
+        ring.strokeCircle(0, 0, 5);
+        ring.setBlendMode(Phaser.BlendModes.ADD);
+        ring.setDepth(100);
+
+        this.scene.tweens.add({
+          targets: ring,
+          scaleX: 4,
+          scaleY: 4,
+          alpha: 0,
+          duration: 250,
+          delay: i * 30,
+          onComplete: () => ring.destroy(),
+        });
+      }
+      this.sparkBurst(toX, toY, color, 12);
+    });
+  }
+
+  // ========================================
+  // 경고 표시 이펙트 (새로 추가)
+  // ========================================
+  warningIndicator(x: number, y: number, radius: number, duration: number = 1000) {
+    const warning = this.scene.add.graphics();
+    warning.setDepth(5);
+
+    let flash = false;
+    const timer = this.scene.time.addEvent({
+      delay: 80,
+      repeat: Math.floor(duration / 80),
+      callback: () => {
+        flash = !flash;
+        warning.clear();
+        warning.lineStyle(3, 0xff0000, flash ? 1 : 0.5);
+        warning.strokeCircle(x, y, radius);
+        warning.fillStyle(0xff0000, flash ? 0.25 : 0.1);
+        warning.fillCircle(x, y, radius);
+      },
+    });
+
+    this.scene.time.delayedCall(duration, () => {
+      timer.destroy();
+      warning.destroy();
+    });
+
+    return warning;
+  }
+
+  // ========================================
+  // 오라 이펙트 (캐릭터 주변)
+  // ========================================
+  auraEffect(target: Phaser.GameObjects.Sprite, color: number): Phaser.Time.TimerEvent {
+    return this.scene.time.addEvent({
+      delay: 100,
+      loop: true,
+      callback: () => {
+        if (!target.active) return;
+
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 20 + Math.random() * 15;
+        const particle = this.scene.add.circle(
+          target.x + Math.cos(angle) * dist,
+          target.y + Math.sin(angle) * dist,
+          3 + Math.random() * 3,
+          color,
+          0.6
+        );
+        particle.setBlendMode(Phaser.BlendModes.ADD);
+        particle.setDepth(target.depth - 1);
+
+        this.scene.tweens.add({
+          targets: particle,
+          y: particle.y - 30,
+          alpha: 0,
+          scale: 0.3,
+          duration: 400,
+          onComplete: () => particle.destroy(),
+        });
+      },
+    });
+  }
+
+  // ========================================
+  // 보스 등장 이펙트 (새로 추가)
+  // ========================================
+  bossEntranceEffect(x: number, y: number, color: number) {
+    this.screenFlash(color, 200);
+    this.screenShake(300, 0.02);
+
+    // 포탈 이펙트
+    let size = 0;
+    const portal = this.scene.add.graphics();
+    portal.setDepth(50);
+
+    const timer = this.scene.time.addEvent({
+      delay: 16,
+      repeat: 80,
+      callback: () => {
+        size += 4;
+        portal.clear();
+
+        // 외곽 링
+        portal.lineStyle(5, color, 0.9);
+        portal.strokeCircle(x, y, size);
+
+        // 내부 소용돌이
+        portal.lineStyle(2, 0xffffff, 0.5);
+        for (let i = 0; i < 4; i++) {
+          const angle = (i / 4) * Math.PI * 2 + size * 0.05;
+          const innerSize = size * 0.7;
+          portal.strokeCircle(
+            x + Math.cos(angle) * innerSize * 0.3,
+            y + Math.sin(angle) * innerSize * 0.3,
+            innerSize * 0.2
+          );
+        }
+      },
+    });
+
+    this.scene.time.delayedCall(1500, () => {
+      this.scene.tweens.add({
+        targets: portal,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => {
+          timer.destroy();
+          portal.destroy();
+        },
+      });
+    });
   }
 
   // 히트 이펙트 (피격 시)
